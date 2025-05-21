@@ -1,182 +1,184 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Cadastro de Produtos</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      max-width: 800px;
-      margin: auto;
-    }
-
-    h1 {
-      text-align: center;
-      color: #333;
-    }
-
-    form {
-      margin-bottom: 30px;
-      border: 1px solid #ddd;
-      padding: 20px;
-      border-radius: 8px;
-      background-color: #f9f9f9;
-    }
-
-    input, button {
-      padding: 10px;
-      width: 100%;
-      box-sizing: border-box;
-      margin: 5px 0;
-    }
-
-    button {
-      background-color: #4CAF50;
-      color: white;
-      border: none;
-      cursor: pointer;
-      font-weight: bold;
-    }
-
-    button:hover {
-      background-color: #45a049;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-    }
-
-    th, td {
-      padding: 12px;
-      border: 1px solid #ddd;
-      text-align: left;
-    }
-
-    th {
-      background-color: #f2f2f2;
-    }
-
-    .preco {
-      color: green;
-      font-weight: bold;
-    }
-
-    #resposta {
-      margin-top: 10px;
-      color: red;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Produtos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Estilos personalizados adicionais, se necessário */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .product-card {
+            /* Adiciona uma sombra sutil e cantos arredondados aos cards de produto */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+    </style>
 </head>
-<body>
+<body class="bg-gray-100 text-gray-800">
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8">
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl sm:text-4xl font-bold text-blue-600">Nossos Produtos</h1>
+        </header>
 
-  <h1>🛒 Cadastro de Produtos</h1>
+        <main id="productList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+            </main>
 
-  <form id="formProduto">
-    <label for="nome">Nome do Produto:</label>
-    <input type="text" id="nome" required />
+        <div id="loadingMessage" class="text-center text-gray-500 mt-8 text-lg">
+            Carregando produtos...
+        </div>
 
-    <label for="preco">Preço do Produto:</label>
-    <input type="number" step="0.01" id="preco" required />
+        <div id="errorMessage" class="hidden text-center text-red-500 mt-8 text-lg p-4 bg-red-100 rounded-lg">
+            </div>
 
-    <button type="submit">Cadastrar</button>
-    <div id="resposta"></div>
-  </form>
+    </div>
 
-  <h2>📦 Lista de Produtos</h2>
-  <table id="tabelaProdutos">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Nome</th>
-        <th>Preço</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+    <script>
+        // Dados JSON fornecidos (simulando uma resposta de API)
+        const jsonData = '[{"_id":"681f7584cc06ab8b413b49d3","nome":"Monitor do Gerson","preco":20300},{"_id":"6827de6b01cd54e50d136755","nome":"Mouse","preco":120012}]';
 
-  <script>
-    const form = document.getElementById('formProduto');
-    const respostaDiv = document.getElementById('resposta');
-    const tabelaBody = document.querySelector('#tabelaProdutos tbody');
-
-    // Função para buscar e exibir produtos
-    async function listarProdutos() {
-      try {
-        const response = await fetch('http://localhost:3000/');
-        const produtos = await response.json();
-
-        tabelaBody.innerHTML = ''; // Limpar antes de preencher
-
-        if (!produtos.length) {
-          tabelaBody.innerHTML = '<tr><td colspan="3">Nenhum produto encontrado.</td></tr>';
-          return;
+        // Função para formatar o preço para o padrão brasileiro (R$)
+        function formatPrice(price) {
+            // Assume que o preço está em centavos
+            return (price / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
         }
 
-        produtos.forEach(produto => {
-          const row = document.createElement('tr');
+        // Função para exibir os produtos na página
+        function displayProducts(products) {
+            const productListContainer = document.getElementById('productList');
+            const loadingMessage = document.getElementById('loadingMessage');
+            const errorMessageContainer = document.getElementById('errorMessage');
 
-          row.innerHTML = `
-            <td>${produto._id}</td>
-            <td>${produto.nome}</td>
-            <td class="preco">${formatarPreco(produto.preco)}</td>
-          `;
+            // Limpa o container de produtos e mensagens de erro/carregamento
+            productListContainer.innerHTML = '';
+            errorMessageContainer.classList.add('hidden');
+            errorMessageContainer.textContent = '';
 
-          tabelaBody.appendChild(row);
-        });
-      } catch (error) {
-        tabelaBody.innerHTML = `<tr><td colspan="3" style="color:red;">Erro ao carregar produtos: ${error.message}</td></tr>`;
-      }
-    }
+            if (!products || products.length === 0) {
+                loadingMessage.textContent = 'Nenhum produto encontrado.';
+                return;
+            }
 
-    // Função para formatar número como moeda BRL
-    function formatarPreco(valor) {
-      return (valor / 100).toLocaleString('pt-BR', {
-        style: 'currency',
-        currency: 'BRL'
-      });
-    }
+            // Esconde a mensagem de carregamento
+            loadingMessage.classList.add('hidden');
 
-    // Enviar formulário
-    form.addEventListener('submit', async function (e) {
-      e.preventDefault();
+            products.forEach(product => {
+                // Cria o card do produto
+                const productCard = document.createElement('div');
+                productCard.className = 'product-card bg-white p-4 rounded-lg flex flex-col justify-between'; // Adicionado flex para alinhar o botão
 
-      const nome = document.getElementById('nome').value.trim();
-      const preco = parseFloat(document.getElementById('preco').value);
+                // Cria o nome do produto
+                const productName = document.createElement('h2');
+                productName.className = 'text-xl font-semibold text-gray-700 mb-2';
+                productName.textContent = product.nome || 'Produto sem nome'; // Fallback para nome
 
-      if (!nome || isNaN(preco)) {
-        respostaDiv.textContent = 'Por favor, preencha todos os campos corretamente.';
-        return;
-      }
+                // Cria o preço do produto
+                const productPrice = document.createElement('p');
+                productPrice.className = 'text-lg text-blue-500 font-medium mb-3';
+                productPrice.textContent = formatPrice(product.preco || 0); // Fallback e formatação do preço
 
-      try {
-        const response = await fetch('http://localhost:3000/', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ nome, preco })
-        });
+                // Cria o ID do produto (opcional, pode ser útil para debug ou outras funcionalidades)
+                const productId = document.createElement('p');
+                productId.className = 'text-xs text-gray-400 mb-4';
+                productId.textContent = `ID: ${product._id || 'N/A'}`;
 
-        if (response.ok) {
-          respostaDiv.textContent = 'Produto cadastrado com sucesso!';
-          form.reset();
-          listarProdutos(); // Atualizar lista
-        } else {
-          const data = await response.json();
-          respostaDiv.textContent = 'Erro ao salvar produto: ' + (data.erro || 'Desconhecido');
+                // Cria um botão de "Ver detalhes" (exemplo de interatividade)
+                const detailsButton = document.createElement('button');
+                detailsButton.className = 'mt-auto w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-md transition duration-150 ease-in-out';
+                detailsButton.textContent = 'Ver Detalhes';
+                detailsButton.onclick = () => {
+                    // Ação do botão (ex: mostrar um modal com mais informações)
+                    // Usando uma div para simular um modal, já que alert() não é permitido
+                    showModal(`Detalhes do ${product.nome}`, `ID: ${product._id}\nNome: ${product.nome}\nPreço: ${formatPrice(product.preco)}`);
+                };
+
+                // Adiciona os elementos ao card
+                productCard.appendChild(productName);
+                productCard.appendChild(productPrice);
+                productCard.appendChild(productId);
+                productCard.appendChild(detailsButton);
+
+                // Adiciona o card ao container da lista
+                productListContainer.appendChild(productCard);
+            });
         }
-      } catch (error) {
-        respostaDiv.textContent = 'Erro de conexão: ' + error.message;
-      }
-    });
 
-    // Carregar produtos ao iniciar
-    listarProdutos();
-  </script>
+        // Função para simular um modal (substituindo alert)
+        function showModal(title, message) {
+            // Remove qualquer modal existente
+            const existingModal = document.getElementById('customModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
 
+            // Cria o overlay do modal
+            const modalOverlay = document.createElement('div');
+            modalOverlay.id = 'customModal';
+            modalOverlay.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50';
+
+            // Cria o conteúdo do modal
+            const modalContent = document.createElement('div');
+            modalContent.className = 'bg-white p-6 rounded-lg shadow-xl max-w-sm w-full';
+
+            // Título do modal
+            const modalTitle = document.createElement('h3');
+            modalTitle.className = 'text-xl font-semibold mb-4 text-gray-700';
+            modalTitle.textContent = title;
+
+            // Mensagem do modal
+            const modalMessage = document.createElement('p');
+            modalMessage.className = 'text-gray-600 mb-6 whitespace-pre-line'; // whitespace-pre-line para respeitar quebras de linha
+            modalMessage.textContent = message;
+
+            // Botão para fechar o modal
+            const closeButton = document.createElement('button');
+            closeButton.className = 'w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-md transition duration-150 ease-in-out';
+            closeButton.textContent = 'Fechar';
+            closeButton.onclick = () => {
+                modalOverlay.remove();
+            };
+
+            // Monta o modal
+            modalContent.appendChild(modalTitle);
+            modalContent.appendChild(modalMessage);
+            modalContent.appendChild(closeButton);
+            modalOverlay.appendChild(modalContent);
+
+            // Adiciona o modal ao body
+            document.body.appendChild(modalOverlay);
+        }
+
+
+        // Função para simular o carregamento dos dados (substitua por sua lógica de fetch real)
+        async function fetchProducts() {
+            const loadingMessage = document.getElementById('loadingMessage');
+            const errorMessageContainer = document.getElementById('errorMessage');
+
+            try {
+                // Simula um delay de API
+                await new Promise(resolve => setTimeout(resolve, 500));
+
+                // Parseia o JSON
+                const products = JSON.parse(jsonData);
+
+                // Verifica se o parsing foi bem-sucedido e se é um array
+                if (!Array.isArray(products)) {
+                    throw new Error("Os dados recebidos não são uma lista de produtos válida.");
+                }
+
+                displayProducts(products);
+
+            } catch (error) {
+                console.error('Erro ao carregar ou processar produtos:', error);
+                loadingMessage.classList.add('hidden'); // Esconde "Carregando..."
+                errorMessageContainer.textContent = `Erro ao carregar produtos: ${error.message}. Verifique o console para mais detalhes.`;
+                errorMessageContainer.classList.remove('hidden');
+            }
+        }
+
+        // Chama a função para carregar e exibir os produtos quando a página carregar
+        document.addEventListener('DOMContentLoaded', fetchProducts);
+    </script>
 </body>
 </html>
