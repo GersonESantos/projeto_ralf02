@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cadastro de Produtos</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      max-width: 800px;
+      margin: auto;
+    }
+
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+
+    form {
+      margin-bottom: 30px;
+      border: 1px solid #ddd;
+      padding: 20px;
+      border-radius: 8px;
+      background-color: #f9f9f9;
+    }
+
+    input, button {
+      padding: 10px;
+      width: 100%;
+      box-sizing: border-box;
+      margin: 5px 0;
+    }
+
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    th, td {
+      padding: 12px;
+      border: 1px solid #ddd;
+      text-align: left;
+    }
+
+    th {
+      background-color: #f2f2f2;
+    }
+
+    .preco {
+      color: green;
+      font-weight: bold;
+    }
+
+    #resposta {
+      margin-top: 10px;
+      color: red;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🛒 Cadastro de Produtos</h1>
+
+  <form id="formProduto">
+    <label for="nome">Nome do Produto:</label>
+    <input type="text" id="nome" required />
+
+    <label for="preco">Preço do Produto:</label>
+    <input type="number" step="0.01" id="preco" required />
+
+    <button type="submit">Cadastrar</button>
+    <div id="resposta"></div>
+  </form>
+
+  <h2>📦 Lista de Produtos</h2>
+  <table id="tabelaProdutos">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Nome</th>
+        <th>Preço</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    const form = document.getElementById('formProduto');
+    const respostaDiv = document.getElementById('resposta');
+    const tabelaBody = document.querySelector('#tabelaProdutos tbody');
+
+    // Função para buscar e exibir produtos
+    async function listarProdutos() {
+      try {
+        const response = await fetch('http://localhost:3000/');
+        const produtos = await response.json();
+
+        tabelaBody.innerHTML = ''; // Limpar antes de preencher
+
+        if (!produtos.length) {
+          tabelaBody.innerHTML = '<tr><td colspan="3">Nenhum produto encontrado.</td></tr>';
+          return;
+        }
+
+        produtos.forEach(produto => {
+          const row = document.createElement('tr');
+
+          row.innerHTML = `
+            <td>${produto._id}</td>
+            <td>${produto.nome}</td>
+            <td class="preco">${formatarPreco(produto.preco)}</td>
+          `;
+
+          tabelaBody.appendChild(row);
+        });
+      } catch (error) {
+        tabelaBody.innerHTML = `<tr><td colspan="3" style="color:red;">Erro ao carregar produtos: ${error.message}</td></tr>`;
+      }
+    }
+
+    // Função para formatar número como moeda BRL
+    function formatarPreco(valor) {
+      return (valor / 100).toLocaleString('pt-BR', {
+        style: 'currency',
+        currency: 'BRL'
+      });
+    }
+
+    // Enviar formulário
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault();
+
+      const nome = document.getElementById('nome').value.trim();
+      const preco = parseFloat(document.getElementById('preco').value);
+
+      if (!nome || isNaN(preco)) {
+        respostaDiv.textContent = 'Por favor, preencha todos os campos corretamente.';
+        return;
+      }
+
+      try {
+        const response = await fetch('http://localhost:3000/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ nome, preco })
+        });
+
+        if (response.ok) {
+          respostaDiv.textContent = 'Produto cadastrado com sucesso!';
+          form.reset();
+          listarProdutos(); // Atualizar lista
+        } else {
+          const data = await response.json();
+          respostaDiv.textContent = 'Erro ao salvar produto: ' + (data.erro || 'Desconhecido');
+        }
+      } catch (error) {
+        respostaDiv.textContent = 'Erro de conexão: ' + error.message;
+      }
+    });
+
+    // Carregar produtos ao iniciar
+    listarProdutos();
+  </script>
+
+</body>
+</html>
